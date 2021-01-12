@@ -1,14 +1,12 @@
 #[macro_use]
 extern crate clap;
 use webbrowser;
+use uuid::Uuid;
 
-use clap::{App, SubCommand, Arg};
+use clap::{SubCommand, Arg};
 
 fn main() {
-    let app = App::new(crate_name!())
-        .version(crate_version!())
-        .author(crate_authors!())
-        .about(crate_description!())
+    let app = app_from_crate!()
         .subcommand(
             SubCommand::with_name("login")
                 .about("Login to Misskey instance")
@@ -23,9 +21,27 @@ fn main() {
 
     if let Some(ref matches_login) = matches.subcommand_matches("login") {
         let address = matches_login.value_of("address").unwrap();
-        if let Err(_) = webbrowser::open(&format!("https://{}/", address)) {
-            println!("Could not open browser. Please open URL below: ");
+        let miauth_uuid = Uuid::new_v4().to_string();
+        let open_address = format!(
+            "https://{}/miauth/{}\
+            ?name=misscmd\
+            &permission=\
+            read:account,read:drive,write:drive,\
+            read:following,write:notes,read:notifications",
+            address,
+            miauth_uuid
+        );
+        if let Err(_) = webbrowser::open(&open_address.as_str()) {
+            println!(
+                "Could not open browser. Please open URL below: \
+                {}", &open_address);
+        } else {
+            println!(
+                "Please authenticate with the following URL.\n\
+                If you lose your browser, \
+                please reopen it at the following URL:\n\
+                {}", &open_address);
         };
+        println!("If you allow authentication, enter some key.");
     };
-
 }
