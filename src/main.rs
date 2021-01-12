@@ -4,8 +4,12 @@ use webbrowser;
 use uuid::Uuid;
 
 use clap::{SubCommand, Arg};
+use misscmd::pause;
+use misscmd::config::get_config;
+use std::process;
 
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let app = app_from_crate!()
         .subcommand(
             SubCommand::with_name("login")
@@ -15,9 +19,19 @@ fn main() {
                         .help("Specify to address")
                         .required(true)
                 )
+        )
+        .subcommand(
+            SubCommand::with_name("new")
+                .about("Make a new note")
+                .arg(
+                    Arg::with_name("body")
+                        .help("What's happened?")
+                        .required(true)
+                )
         );
 
     let matches = app.get_matches();
+    let config = get_config().unwrap();
 
     if let Some(ref matches_login) = matches.subcommand_matches("login") {
         let address = matches_login.value_of("address").unwrap();
@@ -42,6 +56,21 @@ fn main() {
                 please reopen it at the following URL:\n\
                 {}", &open_address);
         };
-        println!("If you allow authentication, enter some key.");
+        loop {
+            pause("If you allowed authentication, Please press Enter key.");
+            // TODO: 作る
+        };
     };
+
+    if let Some(_) = matches.subcommand_matches("new") {
+        if let None = config {
+            eprintln!(
+                "Please login to Misskey instance first!\n\
+                Help: misscmd login <instance_address>"
+            );
+            process::exit(1);
+        }
+    }
+
+    Ok(())
 }

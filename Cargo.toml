@@ -2,12 +2,43 @@
 name = "misscmd"
 version = "0.1.0"
 authors = ["YuzuRyo61 <yuzuryo61@yuzulia.work>"]
+description = "Misskey client in CUI"
 edition = "2018"
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = "2.33.3"
-misskey = "0.2.0"
+tokio = { version = "1.0.1", features = ["full"] }
+anyhow = "1.0.38"
 webbrowser = "0.5.5"
 uuid = { version = "0.8.2", features = ["serde", "v4"] }
+dirs = "3.0.1"
+toml = "0.5.8"
+serde = { version = "1.0.119", features = ["derive"] }
+serde_derive = "1.0.119"
+
+[dependencies.misskey]
+version = "0.2.0"
+default-features = false
+features = [
+    "http-client",
+    "websocket-client",
+    "tokio-runtime",
+    "aid",
+    "12-63-0",
+    "12-62-2",
+    "12-62-0",
+    "12-61-0",
+    "12-60-0",
+    "12-58-0",
+    "12-57-0",
+    "12-55-0",
+    "12-51-0",
+    "12-49-0",
+    "12-48-0",
+    "12-47-0",
+    "12-42-0",
+    "12-39-0",
+]
