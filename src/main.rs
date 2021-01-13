@@ -5,8 +5,10 @@ use uuid::Uuid;
 
 use clap::{SubCommand, Arg};
 use misscmd::pause;
-use misscmd::config::get_config;
+use misscmd::config::{get_config, Config, ConfigAccount, save_config};
 use std::process;
+
+use misscmd::model::MiAuthResponse;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -45,6 +47,11 @@ async fn main() -> anyhow::Result<()> {
             address,
             miauth_uuid
         );
+        let auth_check_url = format!(
+            "https://{}/api/miauth/{}/check",
+            address,
+            miauth_uuid
+        );
         if let Err(_) = webbrowser::open(&open_address.as_str()) {
             println!(
                 "Could not open browser. Please open URL below: \
@@ -57,8 +64,30 @@ async fn main() -> anyhow::Result<()> {
                 {}", &open_address);
         };
         loop {
-            pause("If you allowed authentication, Please press Enter key.");
-            // TODO: 作る
+            pause("If you allowed authentication, Please press Enter key.\n");
+            let http_cli = reqwest::Client::new();
+            let res = http_cli.post(auth_check_url.as_str())
+                .send().await;
+            if let Ok(ok_res) = res {
+                let res_json: MiAuthResponse = ok_res.json().await.unwrap();
+                if res_json.ok == false {
+                    println!("Authenticate error. Please try again.");
+                    continue;
+                } else {
+                    let token = res_json.token.unwrap();
+                    let save_cfg = Config {
+                        account: ConfigAccount {
+                            address: address.to_string(),
+                            token
+                        }
+                    };
+                    save_config(&save_cfg).unwrap();
+                    println!("Authenticate Successfully!");
+                    return Ok(())
+                }
+            } else {
+                println!("Connection error. Please try again.");
+            }
         };
     };
 

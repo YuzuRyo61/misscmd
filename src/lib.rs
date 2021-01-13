@@ -7,6 +7,7 @@ use std::io;
 use std::io::{Write, Read};
 
 pub mod config;
+pub mod model;
 
 pub fn pause(msg: &str) {
     let mut stdin = io::stdin();

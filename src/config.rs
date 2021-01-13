@@ -1,12 +1,12 @@
-use std::fs;
-use std::io::{BufReader, Read};
+use std::io::{BufReader, Read, Write};
+use std::fs::{self, File};
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Config {
     pub account: ConfigAccount
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ConfigAccount {
     pub address: String,
     pub token: String
@@ -31,4 +31,14 @@ pub fn get_config() -> Result<Option<Config>, String> {
     } else {
         Ok(None)
     }
+}
+
+pub fn save_config(value: &Config) -> Result<(), Box<dyn std::error::Error>> {
+    let conf_dir = dirs::home_dir().unwrap().join(".misscmd");
+    let conf_path = &conf_dir.join("config.toml");
+    fs::create_dir_all(conf_dir)?;
+    let mut file_stream = File::create(conf_path)?;
+    write!(file_stream, "{}", toml::to_string(value).unwrap())?;
+    file_stream.flush()?;
+    Ok(())
 }
