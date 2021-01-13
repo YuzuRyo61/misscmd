@@ -2,12 +2,12 @@
 extern crate clap;
 use webbrowser;
 use uuid::Uuid;
-
 use clap::{SubCommand, Arg};
+use std::process;
+use misskey::{HttpClient, ClientExt, Error as MKError};
+
 use misscmd::pause;
 use misscmd::config::{get_config, Config, ConfigAccount, save_config};
-use std::process;
-
 use misscmd::model::MiAuthResponse;
 
 #[tokio::main]
@@ -83,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
                     };
                     save_config(&save_cfg).unwrap();
                     println!("Authenticate Successfully!");
-                    return Ok(())
+                    return Ok(());
                 }
             } else {
                 println!("Connection error. Please try again.");
@@ -91,7 +91,7 @@ async fn main() -> anyhow::Result<()> {
         };
     };
 
-    if let Some(_) = matches.subcommand_matches("new") {
+    if let Some(matches_new) = matches.subcommand_matches("new") {
         if let None = config {
             eprintln!(
                 "Please login to Misskey instance first!\n\
@@ -99,7 +99,36 @@ async fn main() -> anyhow::Result<()> {
             );
             process::exit(1);
         }
-    }
+        let config = config.unwrap();
+        let client = HttpClient::builder(format!("https://{}/api/", &config.account.address).as_str())
+            .token(&config.account.token)
+            .build();
+        if let Err(_) = client {
+            eprintln!("I can't connect. You may not be able to connect to your instance or your token may not be available.");
+            process::exit(2);
+        }
+        let client = client.unwrap();
+        let res = client.create_note(matches_new.value_of("body").unwrap()).await;
+        // TODO: aid以外の処理はどうすればいい？
+        if let Ok(note) = res {
+            println!("Posted!\nhttps://{}/notes/{}", config.account.token, note.id);
+            return Ok(());
+        } else {
+            let err = res.err().unwrap();
+            match err {
+                MKError::Client(e) => {
+                    eprintln!("Client error: {:?}", e);
+                },
+                MKError::API(e) => {
+                    eprintln!("API Error: {:?}", e)
+                },
+                MKError::Io(e) => {
+                    eprintln!("Io Error: {:?}", e)
+                }
+            };
+            process::exit(3);
+        }
+    };
 
     Ok(())
 }
