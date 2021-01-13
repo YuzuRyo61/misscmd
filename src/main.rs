@@ -9,6 +9,7 @@ use misskey::{HttpClient, ClientExt, Error as MKError};
 use misscmd::pause;
 use misscmd::config::{get_config, Config, ConfigAccount, save_config};
 use misscmd::model::MiAuthResponse;
+use std::io::stdin;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -36,6 +37,18 @@ async fn main() -> anyhow::Result<()> {
     let config = get_config().unwrap();
 
     if let Some(ref matches_login) = matches.subcommand_matches("login") {
+        if let Some(_) = config {
+            loop {
+                println!("The configuration file has already been created. Do you want to continue? (yes/no)");
+                let mut yn = String::new();
+                stdin().read_line(&mut yn).unwrap();
+                match yn.to_lowercase().as_str() {
+                    "yes" | "yes\n" | "yes\r\n" | "yes\r" => break,
+                    "no" | "no\n" | "no\r\n" | "no\r" => return Ok(()),
+                    _ => continue,
+                }
+            };
+        };
         let address = matches_login.value_of("address").unwrap();
         let miauth_uuid = Uuid::new_v4().to_string();
         let open_address = format!(
@@ -111,7 +124,7 @@ async fn main() -> anyhow::Result<()> {
         let res = client.create_note(matches_new.value_of("body").unwrap()).await;
         // TODO: aid以外の処理はどうすればいい？
         if let Ok(note) = res {
-            println!("Posted!\nhttps://{}/notes/{}", config.account.token, note.id);
+            println!("Posted!\nhttps://{}/notes/{}", config.account.address, note.id);
             return Ok(());
         } else {
             let err = res.err().unwrap();
