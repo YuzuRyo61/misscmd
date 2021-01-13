@@ -5,6 +5,7 @@ authors = ["YuzuRyo61 <yuzuryo61@yuzulia.work>"]
 description = "Misskey client in CUI"
 edition = "2018"
 publish = false
+license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
